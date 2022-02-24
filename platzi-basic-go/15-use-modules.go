@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	pk "go-dev learning-go platzi-basic-go"
+	pk "platzi-basic-go mypackage"
 )
 
 // GO DOC URL -> https://pkg.go.dev/?utm_source=godoc
