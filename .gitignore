@@ -1,6 +1,6 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/go,windows,macos
-# Edit at https://www.toptal.com/developers/gitignore?templates=go,windows,macos
+# Created by https://www.toptal.com/developers/gitignore/api/go,windows,macos,visualstudiocode
+# Edit at https://www.toptal.com/developers/gitignore?templates=go,windows,macos,visualstudiocode
 
 ### Go ###
 # If you prefer the allow list template instead of the deny list, see community template:
@@ -58,6 +58,27 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# Support for Project snippet scope
+
 ### Windows ###
 # Windows thumbnail cache files
 Thumbs.db
@@ -84,4 +105,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/go,windows,macos
+# End of https://www.toptal.com/developers/gitignore/api/go,windows,macos,visualstudiocode
