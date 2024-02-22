@@ -24,5 +24,15 @@ func main() {
 	for {
 		fmt.Println("counter for forever:", counterForever)
 		counterForever++
+
+		if counterForever == 10 {
+			break
+		}
+	}
+
+	// For range
+	arrNames := []string{"David", "Eduardo", "Luis", "Carlos"}
+	for idx, v := range arrNames {
+		fmt.Println("Index:", idx, "Value:", v)
 	}
 }
