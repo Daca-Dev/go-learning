@@ -2,39 +2,60 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"gin-framework/models"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type RecipesHandler struct {
-	collection *mongo.Collection
-	ctx        *context.Context
+	collection  *mongo.Collection
+	ctx         *context.Context
+	redisClient *redis.Client
 }
 
 func (handler *RecipesHandler) ListRecipes(c *gin.Context) {
-	// bson = binary json
-	cur, err := handler.collection.Find(*handler.ctx, bson.M{})
-	if err != nil {
+	val, err := handler.redisClient.Get(*handler.ctx, "recipes").Result()
+	if err == redis.Nil {
+		log.Println("Requesting to MongoDB")
+
+		cur, err := handler.collection.Find(*handler.ctx, bson.M{})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer cur.Close(*handler.ctx)
+
+		recipes := make([]models.Recipe, 0)
+		for cur.Next(*handler.ctx) {
+			var recipe models.Recipe
+			cur.Decode(&recipe)
+
+			recipes = append(recipes, recipe)
+		}
+
+		data, _ := json.Marshal(recipes)
+		handler.redisClient.Set(*handler.ctx, "recipes", string(data), time.Minute*10)
+
+		c.JSON(http.StatusOK, recipes)
+	} else if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer cur.Close(*handler.ctx)
+	} else {
+		log.Println("Requesting to Redis")
 
-	recipes := make([]models.Recipe, 0)
-	for cur.Next(*handler.ctx) {
-		var recipe models.Recipe
-		cur.Decode(&recipe)
+		recipes := make([]models.Recipe, 0)
 
-		recipes = append(recipes, recipe)
+		json.Unmarshal([]byte(val), &recipes)
+		c.JSON(http.StatusOK, recipes)
 	}
 
-	c.JSON(http.StatusOK, recipes)
 }
 
 func (handler *RecipesHandler) GetRecipe(c *gin.Context) {
@@ -124,6 +145,6 @@ func (handler *RecipesHandler) DeleteRecipe(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-func NewRecipeHandler(ctx *context.Context, collection *mongo.Collection) *RecipesHandler {
-	return &RecipesHandler{collection, ctx}
+func NewRecipeHandler(ctx *context.Context, collection *mongo.Collection, redisClient *redis.Client) *RecipesHandler {
+	return &RecipesHandler{collection, ctx, redisClient}
 }

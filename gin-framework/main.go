@@ -7,16 +7,17 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var err error
+var recipeHandler *handlers.RecipesHandler
 
-func initServer() (*context.Context, *mongo.Collection) {
-	err = godotenv.Load(".env")
+func initServer() {
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("loading .env file: %v", err)
 	}
@@ -33,20 +34,32 @@ func initServer() (*context.Context, *mongo.Collection) {
 
 	log.Println("Connected to MongoDB!")
 
-	return &ctx, collection
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: "",
+		DB:       0,
+	})
+	status := redisClient.Ping(ctx)
+
+	log.Println("Connected to Redis!", status)
+
+	recipeHandler = handlers.NewRecipeHandler(
+		&ctx,
+		collection,
+		redisClient,
+	)
 }
 
 func main() {
-	ctx, collection := initServer()
-	rh := handlers.NewRecipeHandler(ctx, collection)
+	initServer()
 
 	router := gin.Default()
 
-	router.GET("/recipes", rh.ListRecipes)
-	router.GET("/recipes/:id", rh.GetRecipe)
-	router.POST("/recipes", rh.CreateRecipe)
-	router.PUT("/recipes/:id", rh.UpdateRecipe)
-	router.DELETE("/recipes/:id", rh.DeleteRecipe)
+	router.GET("/recipes", recipeHandler.ListRecipes)
+	router.GET("/recipes/:id", recipeHandler.GetRecipe)
+	router.POST("/recipes", recipeHandler.CreateRecipe)
+	router.PUT("/recipes/:id", recipeHandler.UpdateRecipe)
+	router.DELETE("/recipes/:id", recipeHandler.DeleteRecipe)
 	// router.GET("/recipes/search", SearchRecipesHandler)
 
 	router.Run(":3000")

@@ -25,3 +25,11 @@ finally, populate the data base with the following command:
 ```bash
 go run scripts/populateDB.go
 ```
+
+to connect with the redis-insights you need to open the browser and go to the <http://localhost:8001> and set the connection with the following information:
+
+```bash
+Host: redis
+Port: 6379
+Name: local
+```

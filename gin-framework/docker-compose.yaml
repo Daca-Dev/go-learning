@@ -10,4 +10,24 @@ services:
     ports:
       - 27017:27017
     volumes:
-      - ./volumes:/data/db
+      - ./volumes/mongodb:/data/db
+  
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - ./volumes/redis:/data/db
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    restart: always
+    ports:
+      - 5540:5540
+    environment:
+      - REDIS_URI=redis://redis:6379
+    volumes:
+      - ./volumes/redis-insight:/db
+    links:
+      - redis
