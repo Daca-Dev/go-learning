@@ -32,7 +32,8 @@ func initServer() {
 		log.Fatalf("ping to mongo: %v", err)
 	}
 
-	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	recipesCollection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	usersCollection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
 
 	log.Println("Connected to MongoDB!")
 
@@ -46,27 +47,30 @@ func initServer() {
 	log.Println("Connected to Redis!", status)
 
 	recipeHandler = handlers.NewRecipeHandler(
-		&ctx,
-		collection,
+		ctx,
+		recipesCollection,
 		redisClient,
 	)
 
-	authHandler = &handlers.AuthHandler{}
+	authHandler = handlers.NewAuthHandler(ctx, usersCollection)
 }
 
 func main() {
 	initServer()
 
 	router := gin.Default()
-	privateRecipesRoutes := router.Group("/recipes")
+	privateRecipesRoutes := router.Group("/")
 
 	// privateRecipesRoutes.Use(middlewares.APIKeyAuth())
 	privateRecipesRoutes.Use(middlewares.JWTAUth())
-	privateRecipesRoutes.POST("/", recipeHandler.CreateRecipe)
-	privateRecipesRoutes.PUT("/:id", recipeHandler.UpdateRecipe)
-	privateRecipesRoutes.DELETE("/:id", recipeHandler.DeleteRecipe)
+	privateRecipesRoutes.POST("/recipes", recipeHandler.CreateRecipe)
+	privateRecipesRoutes.PUT("/recipes/:id", recipeHandler.UpdateRecipe)
+	privateRecipesRoutes.DELETE("/recipes/:id", recipeHandler.DeleteRecipe)
+
+	privateRecipesRoutes.POST("/refresh", authHandler.RefreshHandler)
 
 	router.POST("/signin", authHandler.SignHandler)
+
 	router.GET("/recipes", recipeHandler.ListRecipes)
 	router.GET("/recipes/:id", recipeHandler.GetRecipe)
 	// router.GET("/recipes/search", SearchRecipesHandler)

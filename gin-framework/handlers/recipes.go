@@ -17,24 +17,24 @@ import (
 
 type RecipesHandler struct {
 	collection  *mongo.Collection
-	ctx         *context.Context
+	ctx         context.Context
 	redisClient *redis.Client
 }
 
 func (handler *RecipesHandler) ListRecipes(c *gin.Context) {
-	val, err := handler.redisClient.Get(*handler.ctx, "recipes").Result()
+	val, err := handler.redisClient.Get(handler.ctx, "recipes").Result()
 	if err == redis.Nil {
 		log.Println("Requesting to MongoDB")
 
-		cur, err := handler.collection.Find(*handler.ctx, bson.M{})
+		cur, err := handler.collection.Find(handler.ctx, bson.M{})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		defer cur.Close(*handler.ctx)
+		defer cur.Close(handler.ctx)
 
 		recipes := make([]models.Recipe, 0)
-		for cur.Next(*handler.ctx) {
+		for cur.Next(handler.ctx) {
 			var recipe models.Recipe
 			cur.Decode(&recipe)
 
@@ -42,7 +42,7 @@ func (handler *RecipesHandler) ListRecipes(c *gin.Context) {
 		}
 
 		data, _ := json.Marshal(recipes)
-		handler.redisClient.Set(*handler.ctx, "recipes", string(data), time.Minute*10)
+		handler.redisClient.Set(handler.ctx, "recipes", string(data), time.Minute*10)
 
 		c.JSON(http.StatusOK, recipes)
 	} else if err != nil {
@@ -67,7 +67,7 @@ func (handler *RecipesHandler) GetRecipe(c *gin.Context) {
 	}
 
 	var recipe models.Recipe
-	err = handler.collection.FindOne(*handler.ctx, bson.M{"_id": objID}).Decode(&recipe)
+	err = handler.collection.FindOne(handler.ctx, bson.M{"_id": objID}).Decode(&recipe)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -86,7 +86,7 @@ func (handler *RecipesHandler) CreateRecipe(c *gin.Context) {
 	recipe.ID = primitive.NewObjectID()
 	recipe.PusblisedAt = time.Now()
 
-	_, err := handler.collection.InsertOne(*handler.ctx, recipe)
+	_, err := handler.collection.InsertOne(handler.ctx, recipe)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -109,7 +109,7 @@ func (handler *RecipesHandler) UpdateRecipe(c *gin.Context) {
 		return
 	}
 
-	_, err = handler.collection.UpdateOne(*handler.ctx, bson.M{"_id": objID}, bson.D{
+	_, err = handler.collection.UpdateOne(handler.ctx, bson.M{"_id": objID}, bson.D{
 		{
 			Key: "$set",
 			Value: bson.D{
@@ -136,7 +136,7 @@ func (handler *RecipesHandler) DeleteRecipe(c *gin.Context) {
 		return
 	}
 
-	_, err = handler.collection.DeleteOne(*handler.ctx, bson.M{"_id": objID})
+	_, err = handler.collection.DeleteOne(handler.ctx, bson.M{"_id": objID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -145,6 +145,6 @@ func (handler *RecipesHandler) DeleteRecipe(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
-func NewRecipeHandler(ctx *context.Context, collection *mongo.Collection, redisClient *redis.Client) *RecipesHandler {
+func NewRecipeHandler(ctx context.Context, collection *mongo.Collection, redisClient *redis.Client) *RecipesHandler {
 	return &RecipesHandler{collection, ctx, redisClient}
 }
