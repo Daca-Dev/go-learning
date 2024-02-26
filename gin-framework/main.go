@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"gin-framework/handlers"
+	"gin-framework/middlewares"
 	"log"
 	"os"
 
@@ -15,6 +16,7 @@ import (
 )
 
 var recipeHandler *handlers.RecipesHandler
+var authHandler *handlers.AuthHandler
 
 func initServer() {
 	err := godotenv.Load(".env")
@@ -48,18 +50,25 @@ func initServer() {
 		collection,
 		redisClient,
 	)
+
+	authHandler = &handlers.AuthHandler{}
 }
 
 func main() {
 	initServer()
 
 	router := gin.Default()
+	privateRecipesRoutes := router.Group("/recipes")
 
+	// privateRecipesRoutes.Use(middlewares.APIKeyAuth())
+	privateRecipesRoutes.Use(middlewares.JWTAUth())
+	privateRecipesRoutes.POST("/", recipeHandler.CreateRecipe)
+	privateRecipesRoutes.PUT("/:id", recipeHandler.UpdateRecipe)
+	privateRecipesRoutes.DELETE("/:id", recipeHandler.DeleteRecipe)
+
+	router.POST("/signin", authHandler.SignHandler)
 	router.GET("/recipes", recipeHandler.ListRecipes)
 	router.GET("/recipes/:id", recipeHandler.GetRecipe)
-	router.POST("/recipes", recipeHandler.CreateRecipe)
-	router.PUT("/recipes/:id", recipeHandler.UpdateRecipe)
-	router.DELETE("/recipes/:id", recipeHandler.DeleteRecipe)
 	// router.GET("/recipes/search", SearchRecipesHandler)
 
 	router.Run(":3000")
