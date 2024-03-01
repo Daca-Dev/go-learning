@@ -14,13 +14,13 @@ func main() {
 	for i := 0; i < 10; i++ {
 		ch <- 1
 		wg.Add(1)
-		go doSOmething(i, &wg, ch)
+		go doSomething(i, &wg, ch)
 	}
 
 	wg.Wait()
 }
 
-func doSOmething(i int, wg *sync.WaitGroup, ch chan int) {
+func doSomething(i int, wg *sync.WaitGroup, ch chan int) {
 	defer wg.Done()
 	fmt.Printf("Id: %d - Started\n", i)
 	time.Sleep(4 * time.Second)

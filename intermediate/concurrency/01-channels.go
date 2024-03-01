@@ -10,17 +10,18 @@ launch a panic and stop the program
 */
 func main() {
 	// create a channel
-	// c := make(chan int) // with out buffer
-	c := make(chan int, 3) // channel with buffer
+	// ch := make(chan int) // with out buffer
+	ch := make(chan int, 3) // channel with buffer
 
 	// send a value (1) to the channel
 	// this channel doesn't has buffer so when you send a value ut block
-	c <- 1
-	c <- 2
-	c <- 3
-	c <- 4
+	ch <- 1
+	ch <- 2
+	ch <- 3
+	// c <- 4 // error if we send this 4th value, we going to exced the buffer, Deadlock error raised
 
 	// read the value in the channel
-	fmt.Println(<-c)
-	fmt.Println(<-c)
+	for v := range ch {
+		fmt.Printf("Value: %d\n", v)
+	}
 }
