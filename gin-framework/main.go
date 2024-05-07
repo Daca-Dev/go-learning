@@ -61,19 +61,21 @@ func main() {
 	router := gin.Default()
 	privateRecipesRoutes := router.Group("/")
 
-	// privateRecipesRoutes.Use(middlewares.APIKeyAuth())
+	// all the paths require the API KEY
+	// router.Use(middlewares.APIKeyAuth())
+
 	privateRecipesRoutes.Use(middlewares.JWTAUth())
 	privateRecipesRoutes.POST("/recipes", recipeHandler.CreateRecipe)
 	privateRecipesRoutes.PUT("/recipes/:id", recipeHandler.UpdateRecipe)
 	privateRecipesRoutes.DELETE("/recipes/:id", recipeHandler.DeleteRecipe)
-
 	privateRecipesRoutes.POST("/refresh", authHandler.RefreshHandler)
 
 	router.POST("/signin", authHandler.SignHandler)
-
 	router.GET("/recipes", recipeHandler.ListRecipes)
 	router.GET("/recipes/:id", recipeHandler.GetRecipe)
 	// router.GET("/recipes/search", SearchRecipesHandler)
 
 	router.Run(":3000")
 }
+
+// the for hour week
